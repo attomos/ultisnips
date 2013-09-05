@@ -42,3 +42,22 @@ snippet img "Image"
 endsnippet
 
 # vim:ft=snippets:
+
+#############
+#  attomos  #
+#############
+
+###########################
+#  Mostly used in jekyll  #
+###########################
+
+snippet hl "code snippet highlight"
+{% highlight ${1:lang} %}
+${VISUAL}$0
+{% endhighlight %}
+endsnippet
+
+
+snippet a "link"
+<a href="${1:href}">${2:$1}</a>
+endsnippet
