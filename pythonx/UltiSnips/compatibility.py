@@ -10,28 +10,32 @@ import sys
 
 import vim  # pylint:disable=import-error
 
-def _vim_dec(string):
-    """Decode 'string' using &encoding."""
-    try:
-        return string.decode(vim.eval("&encoding"))
-    except UnicodeDecodeError:
-        # At least we tried. There might be some problems down the road now
-        return string
-
-def _vim_enc(string):
-    """Encode 'string' using &encoding."""
-    try:
-        return string.encode(vim.eval("&encoding"))
-    except UnicodeEncodeError:
-        return string
-
 if sys.version_info >= (3, 0):
+    def _vim_dec(string):
+        """Decode 'string' using &encoding."""
+        # We don't have the luxury here of failing, everything
+        # falls apart if we don't return a bytearray from the
+        # passed in string
+        return string.decode(vim.eval("&encoding"), "replace")
+
+    def _vim_enc(bytearray):
+        """Encode 'string' using &encoding."""
+        # We don't have the luxury here of failing, everything
+        # falls apart if we don't return a string from the passed
+        # in bytearray
+        return bytearray.encode(vim.eval("&encoding"), "replace")
+
+    def open_ascii_file(filename, mode):
+        """Opens a file in "r" mode."""
+        return open(filename, mode, encoding="utf-8")
+
     def col2byte(line, col):
         """
         Convert a valid column index into a byte index inside
         of vims buffer.
         """
-        pre_chars = vim.current.buffer[line-1][:col]
+        # We pad the line so that selecting the +1 st column still works.
+        pre_chars = (vim.current.buffer[line-1] + "  ")[:col]
         return len(_vim_enc(pre_chars))
 
     def byte2col(line, nbyte):
@@ -56,12 +60,32 @@ else:
     import warnings
     warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+    def _vim_dec(string):
+        """Decode 'string' using &encoding."""
+        try:
+            return string.decode(vim.eval("&encoding"))
+        except UnicodeDecodeError:
+            # At least we tried. There might be some problems down the road now
+            return string
+
+    def _vim_enc(string):
+        """Encode 'string' using &encoding."""
+        try:
+            return string.encode(vim.eval("&encoding"))
+        except UnicodeEncodeError:
+            return string
+
+    def open_ascii_file(filename, mode):
+        """Opens a file in "r" mode."""
+        return open(filename, mode)
+
     def col2byte(line, col):
         """
         Convert a valid column index into a byte index inside
         of vims buffer.
         """
-        pre_chars = _vim_dec(vim.current.buffer[line-1])[:col]
+        # We pad the line so that selecting the +1 st column still works.
+        pre_chars = _vim_dec(vim.current.buffer[line-1] + "  ")[:col]
         return len(_vim_enc(pre_chars))
 
     def byte2col(line, nbyte):
